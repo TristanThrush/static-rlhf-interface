@@ -90,8 +90,7 @@ with demo:
     state = gr.JSON(state_dict, visible=False)
 
     gr.Markdown("# Choose the more helpful response for the input")
-
-    state_display = gr.Markdown(f"Your messages: 0/{TOTAL_CNT}")
+    gr.Markdown("By 'helpful', we mean whatever answer you personally find more useful.")
 
     def _select_response(selected_response, state, dummy):
         if selected_response == "":
@@ -108,7 +107,7 @@ with demo:
                 dummy,
             )
         state["cnt"] += 1
-        state_display = f"Your messages: {state['cnt']}/{TOTAL_CNT}"
+        state_display = f"Messages left in HIT: {state['cnt']}/{TOTAL_CNT}"
         done = state["cnt"] == TOTAL_CNT
         state["data"][-1]["selected_response"] = selected_response
         if state["cnt"] == TOTAL_CNT:
@@ -178,6 +177,8 @@ with demo:
         "Submit Work (preview mode; no MTurk HIT credit, but your examples will still be stored)",
         visible=False,
     )
+
+    state_display = gr.Markdown(f"Messages left in HIT: 0/{TOTAL_CNT}")
 
     # Button event handlers
     get_window_location_search_js = """
