@@ -1,5 +1,3 @@
-# Basic example for doing model-in-the-loop dynamic adversarial data collection
-# using Gradio Blocks.
 import json
 import os
 import threading
@@ -72,6 +70,10 @@ def random_sample_with_least_annotated_examples_first():
     example["outputs"] = random.sample(example["outputs"], 2)
     return example
 
+def prompt_pretty_markdown(prompt):
+    prompt = prompt.replace("Input:", "\n\n<b>Input:</b>\n\n")
+    return prompt
+
 
 with demo:
     dummy = gr.Textbox(visible=False)  # dummy for passing assignmentId
@@ -87,14 +89,15 @@ with demo:
     }
     state = gr.JSON(state_dict, visible=False)
 
-    gr.Markdown("# Choose the most helpful and honest response.")
+    gr.Markdown("# Choose the more helpful response for the input")
 
     state_display = gr.Markdown(f"Your messages: 0/{TOTAL_CNT}")
 
     def _select_response(selected_response, state, dummy):
         if selected_response == "":
-            # Don't do anything if the worker didn't select anything yet.
+            # Don't do anything if the worker didn't select things yet.
             return (
+                gr.update(),
                 gr.update(),
                 gr.update(),
                 gr.update(),
@@ -135,18 +138,20 @@ with demo:
             toggle_final_submit_preview = gr.update(visible=done)
             toggle_final_submit = gr.update(visible=False)
 
-        toggle_select_response_button = gr.update(visible=not done)
+        toggle_submit_response_button = gr.update(visible=not done)
 
         new_sample = random_sample_with_least_annotated_examples_first()
         new_outputs = [obj["output"] for obj in new_sample["outputs"]]
         state["data"].append(new_sample)
-        past_conversation = gr.update(value=new_sample["prompt"])
-        select_response = gr.update(choices=new_outputs, value="")
+        past_conversation = gr.update(
+            value=prompt_pretty_markdown(new_sample["prompt"])
+        )
+        select_response = gr.update(choices=["(a) " + new_outputs[0], "(b) " + new_outputs[1], "(c) Both (a) and (b) are similarly good", "(d) Both (a) and (b) are similarly bad"], value="")
 
         return (
             past_conversation,
             select_response,
-            toggle_select_response_button,
+            toggle_submit_response_button,
             toggle_final_submit,
             toggle_final_submit_preview,
             state_display,
@@ -155,12 +160,19 @@ with demo:
         )
 
     # Input fields
-    past_conversation = gr.Markdown(value=initial_sample["prompt"])
-    initial_outputs = [obj["output"] for obj in initial_sample["outputs"]]
-    select_response = gr.Radio(
-        choices=initial_outputs, label="Choose the most helpful and honest response"
+    gr.Markdown('<span style="padding:7px;color:black;background:#ffd21e;border-radius:10px"><b>Prompt</b></span>')
+
+    past_conversation = gr.Markdown(
+        value=prompt_pretty_markdown(initial_sample["prompt"])
     )
-    select_response_button = gr.Button("Submit Response")
+    initial_outputs = [obj["output"] for obj in initial_sample["outputs"]]
+
+    gr.Markdown('<span style="padding:7px;color:black;background:#ffd21e;border-radius:10px"><b>Select the most helpful response</b></span>')
+    select_response = gr.Radio(
+        choices=["(a) " + initial_outputs[0], "(b) " + initial_outputs[1], "(c) Both (a) and (b) are similarly good", "(d) Both (a) and (b) are similarly bad"], label="",
+    )
+
+    submit_response_button = gr.Button("Submit Response")
     submit_hit_button = gr.Button("Submit HIT", visible=False)
     submit_hit_button_preview = gr.Button(
         "Submit Work (preview mode; no MTurk HIT credit, but your examples will still be stored)",
@@ -174,13 +186,13 @@ with demo:
         }
         """
 
-    select_response_button.click(
+    submit_response_button.click(
         _select_response,
         inputs=[select_response, state, dummy],
         outputs=[
             past_conversation,
             select_response,
-            select_response_button,
+            submit_response_button,
             submit_hit_button,
             submit_hit_button_preview,
             state_display,
