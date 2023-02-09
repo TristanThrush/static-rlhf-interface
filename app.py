@@ -107,7 +107,7 @@ with demo:
                 dummy,
             )
         state["cnt"] += 1
-        state_display = f"Messages left in HIT: {state['cnt']}/{TOTAL_CNT}"
+        state_display = f"Submissions left in HIT: {state['cnt']}/{TOTAL_CNT}"
         done = state["cnt"] == TOTAL_CNT
         state["data"][-1]["selected_response"] = selected_response
         if state["cnt"] == TOTAL_CNT:
@@ -178,7 +178,7 @@ with demo:
         visible=False,
     )
 
-    state_display = gr.Markdown(f"Messages left in HIT: 0/{TOTAL_CNT}")
+    state_display = gr.Markdown(f"Submissions left in HIT: 0/{TOTAL_CNT}")
 
     # Button event handlers
     get_window_location_search_js = """
